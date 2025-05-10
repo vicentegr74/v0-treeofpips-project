@@ -3,13 +3,13 @@ import { getAuth } from "firebase/auth"
 
 // Configuración de Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyBflKTvTdE15bUuvvHmODRLYuzduDOmRNo",
-  authDomain: "traderbloom-459308.firebaseapp.com",
-  projectId: "traderbloom-459308",
-  storageBucket: "traderbloom-459308.firebasestorage.app",
-  messagingSenderId: "780329783215",
-  appId: "1:780329783215:web:501ac5c70617fe9acea95a",
-  measurementId: "G-2CZELR0SSB",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 }
 
 // Inicializar Firebase
