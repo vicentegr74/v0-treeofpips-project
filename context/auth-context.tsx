@@ -1,86 +1,55 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
-import { useRouter } from "next/navigation"
-import { onAuthStateChanged } from "firebase/auth"
-import { auth } from "@/lib/firebase"
-import { simulateGoogleSignIn, signInWithEmail, registerUser, signOut } from "@/lib/auth-service"
+import type React from "react"
 
-type User = {
-  uid: string
-  nombre?: string
-  email: string | null
-  photoURL?: string | null
-  registrado: boolean
-}
+import { createContext, useContext, useState, useEffect } from "react"
+import { useRouter } from "next/router"
+import { signInWithEmail, signInWithGoogle, registerUser, signOut } from "@/lib/auth-service"
 
-type AuthContextType = {
-  user: User | null
+interface AuthContextProps {
+  user: any
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
   loginWithGoogle: () => Promise<void>
-  register: (nombre: string, email: string, password: string) => Promise<void>
   logout: () => Promise<void>
-  isAuthenticated: boolean
+  register: (nombre: string, email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextProps | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  // Escuchar cambios en el estado de autenticación
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        // Usuario autenticado
-        setUser({
-          uid: firebaseUser.uid,
-          nombre: firebaseUser.displayName || undefined,
-          email: firebaseUser.email,
-          photoURL: firebaseUser.photoURL,
-          registrado: true,
-        })
-
-        // Establecer cookie para el middleware
-        document.cookie = "auth=true; path=/; max-age=86400" // 24 horas
-      } else {
-        // Usuario no autenticado
-        setUser(null)
-        document.cookie = "auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
-      }
-
-      setIsLoading(false)
-    })
-
-    // Limpiar el listener cuando el componente se desmonte
-    return () => unsubscribe()
+    // Check for user session here (e.g., using localStorage or cookies)
+    // and update the user state accordingly.
+    // This is a placeholder; implement your actual session management logic.
   }, [])
 
-  const login = async (email: string, password: string) => {
+  const loginWithGoogle = async () => {
     setIsLoading(true)
     try {
-      await signInWithEmail(email, password)
+      // Usar la función real de inicio de sesión con Google
+      await signInWithGoogle()
       router.push("/dashboard")
     } catch (error: any) {
-      console.error("Error al iniciar sesión:", error)
-      throw new Error(error.message || "Credenciales incorrectas")
+      console.error("Error al iniciar sesión con Google:", error)
+      throw new Error(error.message || "Error al iniciar sesión con Google")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const loginWithGoogle = async () => {
+  const logout = async () => {
     setIsLoading(true)
     try {
-      // Usar nuestra función de simulación de inicio de sesión con Google
-      await simulateGoogleSignIn()
-      router.push("/dashboard")
+      await signOut()
+      setUser(null)
+      router.push("/")
     } catch (error: any) {
-      console.error("Error al iniciar sesión con Google:", error)
-      throw new Error(error.message || "Error al iniciar sesión con Google")
+      console.error("Error al cerrar sesión:", error)
     } finally {
       setIsLoading(false)
     }
@@ -92,43 +61,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await registerUser(nombre, email, password)
       router.push("/dashboard")
     } catch (error: any) {
-      console.error("Error al registrar:", error)
-      throw new Error(error.message || "Error al crear la cuenta")
+      console.error("Error al registrar usuario:", error)
+      throw new Error(error.message || "Error al registrar usuario")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const logout = async () => {
+  const login = async (email: string, password: string) => {
+    setIsLoading(true)
     try {
-      await signOut()
-      router.push("/login")
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error)
+      await signInWithEmail(email, password)
+      router.push("/dashboard")
+    } catch (error: any) {
+      console.error("Error al iniciar sesión:", error)
+      throw new Error(error.message || "Error al iniciar sesión")
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        login,
-        loginWithGoogle,
-        register,
-        logout,
-        isAuthenticated: !!user,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  )
+  const value: AuthContextProps = {
+    user,
+    isLoading,
+    loginWithGoogle,
+    logout,
+    register,
+    login,
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (context === undefined) {
-    throw new Error("useAuth debe ser usado dentro de un AuthProvider")
+    throw new Error("useAuth must be used within an AuthProvider")
   }
   return context
 }
