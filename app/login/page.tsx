@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { Eye, EyeOff, AlertCircle, Info } from "lucide-react"
+import { Eye, EyeOff, AlertCircle } from "lucide-react"
 import Image from "next/image"
 import { useTheme } from "next-themes"
 
@@ -108,14 +108,6 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 p-3 rounded-md mb-4 flex items-start gap-2">
-              <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
-              <span>
-                Estás en un entorno de vista previa. El inicio de sesión con Google creará una cuenta de prueba
-                temporal.
-              </span>
-            </div>
-
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -192,7 +184,7 @@ export default function LoginPage() {
                   />
                 </g>
               </svg>
-              Iniciar sesión con Google (Simulado)
+              Iniciar sesión con Google
             </Button>
 
             <div className="mt-6 text-center text-sm">
