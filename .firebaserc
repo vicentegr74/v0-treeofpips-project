@@ -1,0 +1,6 @@
+# Crear el archivo .firebaserc
+echo {
+  "projects": {
+    "default": "traderbloom-459308"
+  }
+} > .firebaserc
