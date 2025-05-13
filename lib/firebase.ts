@@ -1,4 +1,5 @@
-import { initializeApp } from "firebase/app"
+// lib/firebase.ts
+import { initializeApp, getApps } from "firebase/app"
 import { getAuth } from "firebase/auth"
 
 // Configuración de Firebase
@@ -12,11 +13,20 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 }
 
-// Inicializar Firebase
-const app = initializeApp(firebaseConfig)
+// Inicializar Firebase solo en el cliente
+let app;
+let auth;
 
-// Inicializar servicios de Firebase
-export const auth = getAuth(app)
+// Verificar que estamos en el cliente antes de inicializar
+if (typeof window !== 'undefined') {
+  // Inicializar solo si no hay apps ya inicializadas
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApps()[0]; // Si ya hay una app inicializada, úsala
+  }
+  auth = getAuth(app);
+}
 
-// Exportar la configuración para uso en otros archivos
-export { firebaseConfig }
+// Exportar para uso en otros archivos
+export { firebaseConfig, auth }
