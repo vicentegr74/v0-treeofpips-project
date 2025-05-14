@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button"
 import { ChevronDown, Target, BarChart3, Bell, Leaf, LineChart, Smartphone, type LucideIcon } from "lucide-react"
 import { getApprovedTestimonials } from "@/lib/testimonial-service"
 import type { Testimonial } from "@/types/testimonial"
+import { AppHeader } from "@/components/app-header"
+import { Footer } from "@/components/footer"
 
 // Definir interfaces para nuestros componentes
 interface FeatureCardProps {
@@ -55,7 +57,12 @@ const TestimonialCard = ({ quote, author, role, image }: TestimonialCardProps) =
   >
     <div className="flex items-center mb-4">
       <div className="relative w-12 h-12 rounded-full overflow-hidden mr-4">
-        <Image src={image || "/placeholder.svg"} alt={author} fill className="object-contain" />
+        <Image
+          src={image || "/placeholder.svg?height=48&width=48&query=avatar"}
+          alt={author}
+          fill
+          className="object-contain"
+        />
       </div>
       <div>
         <h4 className="font-medium text-green-800 dark:text-green-400">{author}</h4>
@@ -262,6 +269,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800">
+      <AppHeader />
       {/* Hero Section */}
       <section className="py-16 md:py-24 px-4">
         <div className="max-w-7xl mx-auto">
@@ -527,6 +535,7 @@ export default function LandingPage() {
           </motion.div>
         </div>
       </section>
+      <Footer />
     </div>
   )
 }

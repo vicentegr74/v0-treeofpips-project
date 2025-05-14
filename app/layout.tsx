@@ -1,27 +1,21 @@
 import type React from "react"
-import { ConnectionStatus } from "@/components/connection-status"
-import { Inter } from "next/font/google"
-import { ThemeProvider } from "@/components/theme-provider"
-import { AuthProvider } from "@/context/auth-context"
-import { ProjectsProvider } from "@/context/projects-context"
-import { Toaster } from "@/components/ui/toaster"
+import type { Metadata } from "next"
+import "./globals.css"
 
-const inter = Inter({ subsets: ["latin"] })
+export const metadata: Metadata = {
+  title: "v0 App",
+  description: "Created with v0",
+  generator: "v0.dev",
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
   return (
-    <html lang="es" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AuthProvider>
-            <ProjectsProvider>
-              {children}
-              <Toaster />
-              <ConnectionStatus />
-            </ProjectsProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </body>
+    <html lang="en">
+      <body>{children}</body>
     </html>
   )
 }
