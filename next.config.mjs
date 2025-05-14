@@ -1,33 +1,30 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Configuración para producción
-  output: 'standalone', // Optimiza para despliegues en plataformas como Vercel
-  poweredByHeader: false, // Elimina el header X-Powered-By por seguridad
-  compress: true, // Habilita la compresión
-  
-  // Configuración de imágenes
+  output: 'standalone',
+  reactStrictMode: true,
+  swcMinify: true,
   images: {
-    domains: ['firebasestorage.googleapis.com'], // Añade los dominios de tus imágenes
-    formats: ['image/avif', 'image/webp'],
+    domains: ['firebasestorage.googleapis.com'],
     unoptimized: true,
   },
-  
-  // Mantén estas configuraciones que ya tenías
+  experimental: {
+    serverActions: true,
+  },
+  // Deshabilitar la generación estática para rutas dinámicas
+  staticPageGenerationTimeout: 120,
+  // Configurar rutas que no deben generarse estáticamente
+  exportPathMap: async function() {
+    return {
+      '/': { page: '/' },
+      '/404': { page: '/404' },
+    };
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: true,
   },
-  
-  // Estas opciones deben estar fuera de experimental
-  skipTrailingSlashRedirect: true,
-  skipMiddlewareUrlNormalize: true,
-  
-  // Configuración experimental para manejar errores
-  experimental: {
-    // Otras opciones experimentales pueden ir aquí
-  }
 }
 
 export default nextConfig
