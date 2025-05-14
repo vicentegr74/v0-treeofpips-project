@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -9,25 +9,35 @@ interface AnimatedTreeProps {
   onGrow?: () => void
 }
 
-export function AnimatedTree({ progressPercentage, onGrow }: AnimatedTreeProps) {
-  const [prevPercentage, setPrevPercentage] = useState(progressPercentage)
+export function AnimatedTree({ progressPercentage = 0, onGrow }: AnimatedTreeProps) {
+  // Usar useRef para mantener una referencia estable al valor anterior
+  const prevPercentageRef = useRef<number>(progressPercentage)
   const [isGrowing, setIsGrowing] = useState(false)
   const [showParticles, setShowParticles] = useState(false)
+  const [imageError, setImageError] = useState(false)
 
   // Determinar qué imagen de árbol mostrar basado en el porcentaje
-  const getTreeImage = (percentage: number) => {
-    const roundedPercentage = Math.floor(percentage / 10) * 10
+  const getTreeImage = (percentage: number): string => {
+    // Asegurar que el porcentaje es un número válido
+    const validPercentage = Number.isFinite(percentage) ? percentage : 0
+    const roundedPercentage = Math.floor(validPercentage / 10) * 10
     return `/trees/tree-${roundedPercentage}.png`
   }
 
   // Detectar cambios en el progreso para animar
   useEffect(() => {
-    if (progressPercentage > prevPercentage) {
+    // Validar que progressPercentage es un número
+    if (!Number.isFinite(progressPercentage)) {
+      return
+    }
+
+    // Comparar con el valor anterior
+    if (progressPercentage > prevPercentageRef.current) {
       setIsGrowing(true)
       setShowParticles(true)
 
       // Notificar que el árbol está creciendo
-      if (onGrow) {
+      if (typeof onGrow === "function") {
         onGrow()
       }
 
@@ -39,30 +49,87 @@ export function AnimatedTree({ progressPercentage, onGrow }: AnimatedTreeProps) 
       return () => clearTimeout(timer)
     }
 
-    setPrevPercentage(progressPercentage)
-  }, [progressPercentage, prevPercentage, onGrow])
+    // Actualizar la referencia al valor anterior
+    prevPercentageRef.current = progressPercentage
+  }, [progressPercentage, onGrow])
 
-  // Mensaje basado en el progreso
-  const getProgressMessage = () => {
-    if (progressPercentage < 25) {
-      return "Tu árbol está comenzando a crecer. Mantén un ritmo constante y disciplinado."
-    } else if (progressPercentage < 50) {
-      return "Las primeras hojas están brotando. Recuerda seguir tu plan sin apresurarte."
-    } else if (progressPercentage < 75) {
-      return "Tu árbol está creciendo de manera constante. La paciencia es clave en el trading."
-    } else if (progressPercentage < 100) {
-      return "Tu árbol está casi en su esplendor. Mantén la disciplina y sigue tu estrategia hasta el final."
-    } else {
-      return "¡Felicidades! Tu árbol ha florecido completamente. Recuerda que el éxito en trading se basa en la consistencia y la disciplina."
+  // Mensaje basado en el progreso con mensajes específicos para cada etapa
+  const getProgressMessage = (): string => {
+    // Asegurar que el porcentaje es un número válido
+    const validPercentage = Number.isFinite(progressPercentage) ? progressPercentage : 0
+    const roundedPercentage = Math.floor(validPercentage / 10) * 10
+
+    switch (roundedPercentage) {
+      case 0:
+        return "Tu proyecto está comenzando. La semilla ha sido plantada."
+      case 10:
+        return "Los primeros brotes están apareciendo. Mantén un ritmo constante y disciplinado."
+      case 20:
+        return "Tu plántula está creciendo. Recuerda seguir tu plan sin apresurarte."
+      case 30:
+        return "Tu plántula se fortalece. La paciencia es clave en el trading."
+      case 40:
+        return "Tu árbol joven está desarrollándose. Mantén la disciplina en tu estrategia."
+      case 50:
+        return "Tu árbol está creciendo de manera constante. Estás en el camino correcto."
+      case 60:
+        return "Tu árbol se está volviendo más robusto. Continúa con tu estrategia."
+      case 70:
+        return "Tu árbol está casi maduro. Mantén la disciplina hasta el final."
+      case 80:
+        return "Tu árbol está casi en su esplendor. La consistencia es la clave del éxito."
+      case 90:
+        return "Tu árbol está a punto de florecer completamente. ¡La meta está cerca!"
+      case 100:
+        return "¡Felicidades! Tu árbol ha florecido completamente. Has completado tu proyecto con éxito."
+      default:
+        return "Tu árbol está creciendo. Continúa con tu estrategia."
     }
   }
+
+  // Obtener una descripción más detallada para el texto alternativo
+  const getTreeAltText = (percentage: number): string => {
+    // Asegurar que el porcentaje es un número válido
+    const validPercentage = Number.isFinite(percentage) ? percentage : 0
+    const roundedPercentage = Math.floor(validPercentage / 10) * 10
+
+    switch (roundedPercentage) {
+      case 0:
+        return `Semilla plantada - ${validPercentage}% de progreso`
+      case 10:
+        return `Primeros brotes - ${validPercentage}% de progreso`
+      case 20:
+        return `Plántula pequeña - ${validPercentage}% de progreso`
+      case 30:
+        return `Plántula en crecimiento - ${validPercentage}% de progreso`
+      case 40:
+        return `Árbol joven pequeño - ${validPercentage}% de progreso`
+      case 50:
+        return `Árbol joven en desarrollo - ${validPercentage}% de progreso`
+      case 60:
+        return `Árbol adolescente - ${validPercentage}% de progreso`
+      case 70:
+        return `Árbol casi maduro - ${validPercentage}% de progreso`
+      case 80:
+        return `Árbol maduro - ${validPercentage}% de progreso`
+      case 90:
+        return `Árbol adulto - ${validPercentage}% de progreso`
+      case 100:
+        return `Árbol floreciente - ${validPercentage}% de progreso`
+      default:
+        return `Árbol de progreso al ${validPercentage}%`
+    }
+  }
+
+  // Validar que progressPercentage es un número
+  const validProgressPercentage = Number.isFinite(progressPercentage) ? progressPercentage : 0
 
   return (
     <div className="flex flex-col items-center">
       <div className="relative w-[300px] h-[300px] md:w-[400px] md:h-[400px]">
         <AnimatePresence mode="wait">
           <motion.div
-            key={getTreeImage(progressPercentage)}
+            key={getTreeImage(validProgressPercentage)}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{
               opacity: 1,
@@ -78,11 +145,15 @@ export function AnimatedTree({ progressPercentage, onGrow }: AnimatedTreeProps) 
             className="absolute inset-0"
           >
             <Image
-              src={getTreeImage(progressPercentage) || "/placeholder.svg"}
-              alt={`Árbol de progreso al ${progressPercentage}%`}
+              src={
+                imageError ? "/placeholder.svg?height=400&width=400&query=tree" : getTreeImage(validProgressPercentage)
+              }
+              alt={getTreeAltText(validProgressPercentage)}
               width={400}
               height={400}
               className="object-contain"
+              onError={() => setImageError(true)}
+              priority={true}
             />
           </motion.div>
         </AnimatePresence>
@@ -134,13 +205,13 @@ export function AnimatedTree({ progressPercentage, onGrow }: AnimatedTreeProps) 
               strokeWidth="8"
               strokeLinecap="round"
               strokeDasharray={251.2}
-              strokeDashoffset={251.2 - (251.2 * progressPercentage) / 100}
+              strokeDashoffset={251.2 - (251.2 * validProgressPercentage) / 100}
               initial={{ strokeDashoffset: 251.2 }}
-              animate={{ strokeDashoffset: 251.2 - (251.2 * progressPercentage) / 100 }}
+              animate={{ strokeDashoffset: 251.2 - (251.2 * validProgressPercentage) / 100 }}
               transition={{ duration: 1, ease: "easeInOut" }}
             />
             <text x="50" y="55" textAnchor="middle" fontSize="20" fontWeight="bold" fill="#22c55e">
-              {progressPercentage}%
+              {validProgressPercentage}%
             </text>
           </svg>
         </motion.div>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Award, Edit, Medal, Trophy, User } from "lucide-react"
+import { Award, Edit, Medal, MessageSquare, Trophy, User, Info } from "lucide-react"
 import { NotificationSettings } from "@/components/notification-settings"
 import { motion } from "framer-motion"
 import { useAuth } from "@/context/auth-context"
@@ -14,11 +14,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
+import { TestimonialForm } from "@/components/testimonial-form"
+import { Badge } from "@/components/ui/badge"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth()
   const { toast } = useToast()
   const [isEditing, setIsEditing] = useState(false)
+  const [isTestimonialOpen, setIsTestimonialOpen] = useState(false)
   const [editedUser, setEditedUser] = useState({
     nombre: user?.nombre || "",
     email: user?.email || "",
@@ -190,6 +194,27 @@ export default function ProfilePage() {
               <h2 className="text-xl font-bold">{user.nombre || "Usuario"}</h2>
               <p className="text-sm text-muted-foreground mb-4">{user.email}</p>
 
+              {/* Añadir la insignia de nivel aquí */}
+              <div className="mt-2 flex items-center gap-1">
+                <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 flex items-center gap-1">
+                  <span className="text-lg">🌱</span>
+                  <span>Árbol Joven</span>
+                </Badge>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                        <Info className="h-3 w-3" />
+                        <span className="sr-only">Información sobre nivel</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Tu nivel actual en el Bosque de Excelencia</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+
               <div className="w-full space-y-2 mb-4">
                 <div className="flex justify-between text-sm">
                   <span className="font-medium">
@@ -232,9 +257,10 @@ export default function ProfilePage() {
 
         <div className="space-y-6">
           <Tabs defaultValue="achievements">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="achievements">Logros</TabsTrigger>
               <TabsTrigger value="badges">Niveles</TabsTrigger>
+              <TabsTrigger value="testimonial">Testimonio</TabsTrigger>
             </TabsList>
             <TabsContent value="achievements" className="mt-4 space-y-4">
               <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
@@ -291,9 +317,35 @@ export default function ProfilePage() {
                 </CardContent>
               </Card>
             </TabsContent>
+            <TabsContent value="testimonial" className="mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Comparte tu experiencia</CardTitle>
+                  <CardDescription>Cuéntanos cómo Tree of Pips te ha ayudado en tu camino como trader</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TestimonialForm userName={user.nombre || ""} />
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
 
           <NotificationSettings />
+
+          <Dialog open={isTestimonialOpen} onOpenChange={setIsTestimonialOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Compartir mi experiencia
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Comparte tu experiencia con Tree of Pips</DialogTitle>
+              </DialogHeader>
+              <TestimonialForm userName={user.nombre || ""} onClose={() => setIsTestimonialOpen(false)} />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </motion.div>

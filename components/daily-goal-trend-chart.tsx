@@ -13,7 +13,7 @@ import {
   ReferenceLine,
   Label,
 } from "recharts"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, formatNumberValue } from "@/lib/utils"
 import { AlertTriangle, TrendingUp, Clock } from "lucide-react"
 import { sendNotification } from "@/lib/notifications"
 
@@ -22,17 +22,22 @@ interface DailyGoalTrendChartProps {
   averageDailyProgress: number
   daysActive: number
   className?: string
-  currentProgress: number
-  totalTarget: number
-  targetAmount: number
-  initialCapital: number
-  projectTitle: string
+  currentProgress?: number
+  totalTarget?: number
+  targetAmount?: number
+  initialCapital?: number
+  projectTitle?: string
   progressHistory?: Array<{
     id: string
     date: string
     amount: number
     balance: number
     progressPercentage: number
+  }>
+  data?: Array<{
+    date: string
+    goal: number
+    achieved: number
   }>
 }
 
@@ -41,12 +46,13 @@ export function DailyGoalTrendChart({
   averageDailyProgress,
   daysActive,
   className = "",
-  currentProgress,
-  totalTarget,
-  targetAmount,
-  initialCapital,
-  projectTitle,
+  currentProgress = 0,
+  totalTarget = 0,
+  targetAmount = 0,
+  initialCapital = 0,
+  projectTitle = "",
   progressHistory = [],
+  data = [],
 }: DailyGoalTrendChartProps) {
   const [chartData, setChartData] = useState<any[]>([])
   const [isProgressTooFast, setIsProgressTooFast] = useState(false)
@@ -56,7 +62,7 @@ export function DailyGoalTrendChart({
 
   useEffect(() => {
     // Calcular el porcentaje de progreso actual
-    const progressPercentage = (currentProgress / targetAmount) * 100
+    const progressPercentage = targetAmount > 0 ? (currentProgress / targetAmount) * 100 : 0
     setCurrentProgressPercentage(progressPercentage)
 
     // Calcular si el progreso es demasiado rápido
@@ -73,15 +79,19 @@ export function DailyGoalTrendChart({
     if (hasReachedGoal && !goalReached) {
       setGoalReached(true)
       // Enviar notificación
-      sendNotification(
-        "¡Meta alcanzada!",
-        `Tu proyecto "${projectTitle}" ha alcanzado su meta financiera.`,
-        "/icons/icon-192x192.png",
-      )
+      if (projectTitle) {
+        sendNotification(
+          "¡Meta alcanzada!",
+          `Tu proyecto "${projectTitle}" ha alcanzado su meta financiera.`,
+          "/icons/icon-192x192.png",
+        )
+      }
     }
 
     // Preparar datos para el gráfico
-    if (progressHistory && progressHistory.length > 0) {
+    if (data && data.length > 0) {
+      setChartData(data)
+    } else if (progressHistory && progressHistory.length > 0) {
       // Ordenar por fecha
       const sortedHistory = [...progressHistory].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
@@ -89,7 +99,7 @@ export function DailyGoalTrendChart({
       let accumulatedProgress = 0
 
       // Crear datos para el gráfico con cada transacción
-      const data = sortedHistory.map((entry) => {
+      const chartData = sortedHistory.map((entry) => {
         // Extraer la fecha y hora para el formato del eje X
         const date = new Date(entry.date)
         const formattedDate = `${date.getDate()}/${date.getMonth() + 1}`
@@ -98,7 +108,7 @@ export function DailyGoalTrendChart({
         accumulatedProgress += entry.amount
 
         // Calcular el porcentaje de progreso (0-100%)
-        const progressPercentage = (accumulatedProgress / targetAmount) * 100
+        const progressPercentage = targetAmount > 0 ? (accumulatedProgress / targetAmount) * 100 : 0
 
         return {
           name: formattedDate,
@@ -110,7 +120,7 @@ export function DailyGoalTrendChart({
         }
       })
 
-      setChartData(data)
+      setChartData(chartData)
     } else {
       setChartData([])
     }
@@ -125,10 +135,11 @@ export function DailyGoalTrendChart({
     initialCapital,
     projectTitle,
     goalReached,
+    data,
   ])
 
   // Componente personalizado para el tooltip
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
       const date = new Date(data.date)
@@ -144,7 +155,9 @@ export function DailyGoalTrendChart({
             Operación: {data.amount >= 0 ? "+" : ""}
             {formatCurrency(data.amount)}
           </p>
-          <p className="text-sm font-medium">Progreso: {data.percentage.toFixed(2)}%</p>
+          <p className="text-sm font-medium">
+            Progreso: {typeof data.percentage === "number" ? formatNumberValue(data.percentage, 2) : data.percentage}%
+          </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">Saldo total: {formatCurrency(data.balance)}</p>
         </div>
       )
@@ -159,26 +172,27 @@ export function DailyGoalTrendChart({
         icon: AlertTriangle,
         color: "text-amber-500",
         bgColor: "bg-amber-100 dark:bg-amber-900/30",
-        text: `Ritmo acelerado (${(progressRate * 100).toFixed(0)}% de lo necesario)`,
+        text: `Ritmo acelerado (${formatNumberValue(progressRate * 100, 0)}% de lo necesario)`,
       }
     } else if (progressRate > 0.9) {
       return {
         icon: TrendingUp,
         color: "text-green-500",
         bgColor: "bg-green-100 dark:bg-green-900/30",
-        text: `Ritmo óptimo (${(progressRate * 100).toFixed(0)}% de lo necesario)`,
+        text: `Ritmo óptimo (${formatNumberValue(progressRate * 100, 0)}% de lo necesario)`,
       }
     } else {
       return {
         icon: Clock,
         color: "text-blue-500",
         bgColor: "bg-blue-100 dark:bg-blue-900/30",
-        text: `Ritmo moderado (${(progressRate * 100).toFixed(0)}% de lo necesario)`,
+        text: `Ritmo moderado (${formatNumberValue(progressRate * 100, 0)}% de lo necesario)`,
       }
     }
   }
 
   const rateIndicator = getRateIndicator()
+  const Icon = rateIndicator.icon
 
   return (
     <Card className={`overflow-hidden ${className}`}>
@@ -189,7 +203,7 @@ export function DailyGoalTrendChart({
           <div
             className={`flex items-center ${rateIndicator.color} text-xs font-medium px-2 py-1 rounded-full ${rateIndicator.bgColor}`}
           >
-            <rateIndicator.icon className="h-3 w-3 mr-1" />
+            <Icon className="h-3 w-3 mr-1" />
             {rateIndicator.text}
           </div>
         </div>
@@ -211,7 +225,7 @@ export function DailyGoalTrendChart({
                 axisLine={{ stroke: "#e0e0e0" }}
                 tickFormatter={(value) => formatCurrency(value, false)}
                 label={{ value: "Progreso (€)", angle: -90, position: "insideLeft", offset: 10, fontSize: 10 }}
-                domain={[0, targetAmount]}
+                domain={[0, targetAmount > 0 ? targetAmount : "auto"]}
               />
               <Tooltip content={<CustomTooltip />} />
 
@@ -227,24 +241,32 @@ export function DailyGoalTrendChart({
               />
 
               {/* Línea de referencia para la meta (100%) */}
-              <ReferenceLine y={targetAmount} stroke="#3b82f6" strokeDasharray="5 5" strokeWidth={2}>
-                <Label value="Meta (100%)" position="insideTopRight" fill="#3b82f6" fontSize={10} />
-              </ReferenceLine>
+              {targetAmount > 0 && (
+                <ReferenceLine y={targetAmount} stroke="#3b82f6" strokeDasharray="5 5" strokeWidth={2}>
+                  <Label value="Meta (100%)" position="insideTopRight" fill="#3b82f6" fontSize={10} />
+                </ReferenceLine>
+              )}
 
               {/* Línea de referencia para 50% de progreso */}
-              <ReferenceLine y={targetAmount * 0.5} stroke="#64748b" strokeDasharray="3 3" strokeWidth={1}>
-                <Label value="50%" position="insideRight" fill="#64748b" fontSize={10} />
-              </ReferenceLine>
+              {targetAmount > 0 && (
+                <ReferenceLine y={targetAmount * 0.5} stroke="#64748b" strokeDasharray="3 3" strokeWidth={1}>
+                  <Label value="50%" position="insideRight" fill="#64748b" fontSize={10} />
+                </ReferenceLine>
+              )}
 
               {/* Línea de referencia para 25% de progreso */}
-              <ReferenceLine y={targetAmount * 0.25} stroke="#64748b" strokeDasharray="3 3" strokeWidth={1}>
-                <Label value="25%" position="insideRight" fill="#64748b" fontSize={10} />
-              </ReferenceLine>
+              {targetAmount > 0 && (
+                <ReferenceLine y={targetAmount * 0.25} stroke="#64748b" strokeDasharray="3 3" strokeWidth={1}>
+                  <Label value="25%" position="insideRight" fill="#64748b" fontSize={10} />
+                </ReferenceLine>
+              )}
 
               {/* Línea de referencia para 75% de progreso */}
-              <ReferenceLine y={targetAmount * 0.75} stroke="#64748b" strokeDasharray="3 3" strokeWidth={1}>
-                <Label value="75%" position="insideRight" fill="#64748b" fontSize={10} />
-              </ReferenceLine>
+              {targetAmount > 0 && (
+                <ReferenceLine y={targetAmount * 0.75} stroke="#64748b" strokeDasharray="3 3" strokeWidth={1}>
+                  <Label value="75%" position="insideRight" fill="#64748b" fontSize={10} />
+                </ReferenceLine>
+              )}
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -253,7 +275,7 @@ export function DailyGoalTrendChart({
           <div>Meta diaria: {formatCurrency(dailyGoalNeeded)}</div>
           <div>
             Progreso acumulado: {formatCurrency(currentProgress)} / {formatCurrency(targetAmount)} (
-            {currentProgressPercentage.toFixed(2)}%)
+            {formatNumberValue(currentProgressPercentage, 2)}%)
           </div>
         </div>
       </CardContent>

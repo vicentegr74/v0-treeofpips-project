@@ -1,115 +1,172 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, BarChart2, PlusCircle, User, Menu, FolderKanban } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useState, useEffect } from "react"
-import Image from "next/image"
-import { useTheme } from "next-themes"
+import { Menu, X, Home, BarChart2, PieChart, User, Plus, Trophy } from "lucide-react"
+import { useAuth } from "@/context/auth-context"
 
 export function MobileNavigation() {
+  const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { theme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const { isAuthenticated } = useAuth()
 
-  // Evitar problemas de hidratación
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen)
+  // Si no está autenticado y está en la página de inicio, no mostrar esta navegación
+  if (!isAuthenticated && pathname === "/") {
+    return null
   }
 
-  // Cerrar el menú cuando se hace clic fuera de él
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const sidebar = document.getElementById("mobile-sidebar")
-      if (sidebar && !sidebar.contains(event.target as Node) && isMenuOpen) {
-        setIsMenuOpen(false)
-      }
-    }
+  // Si está en la página de inicio o login o registro y no está autenticado, no mostrar
+  if (!isAuthenticated && (pathname === "/" || pathname === "/login" || pathname === "/registro")) {
+    return null
+  }
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [isMenuOpen])
+  const toggleMenu = () => {
+    setIsOpen(!isOpen)
+  }
 
-  // Cerrar el menú cuando cambia la ruta
-  useEffect(() => {
-    setIsMenuOpen(false)
-  }, [pathname])
+  const closeMenu = () => {
+    setIsOpen(false)
+  }
 
-  const navItems = [
-    { href: "/", label: "Inicio", icon: Home },
-    { href: "/proyectos", label: "Mis Proyectos", icon: FolderKanban },
-    { href: "/estadisticas", label: "Estadísticas", icon: BarChart2 },
-    { href: "/proyectos/crear", label: "Nuevo Proyecto", icon: PlusCircle },
-    { href: "/perfil", label: "Perfil", icon: User },
-  ]
+  // Determinar si una ruta está activa
+  const isActive = (path: string) => {
+    return pathname === path || pathname?.startsWith(`${path}/`)
+  }
 
-  const logoSrc =
-    mounted && theme === "dark" ? "/images/treeofpips-horizontal-oscuro.png" : "/images/treeofpips-horizontal-claro.png"
+  // Determinar la ruta de inicio según el estado de autenticación
+  const homeRoute = isAuthenticated ? "/dashboard" : "/"
 
   return (
     <>
-      {/* Botón de hamburguesa fijo en la esquina superior izquierda */}
-      <div className="fixed top-4 left-4 z-50">
-        <button
-          onClick={toggleMenu}
-          className="p-2 rounded-full bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300 shadow-md"
-          aria-label="Abrir menú"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
-      </div>
+      {/* Botón de menú */}
+      <button
+        onClick={toggleMenu}
+        className="fixed bottom-6 left-6 z-50 bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-colors md:hidden"
+        aria-label="Menú"
+      >
+        {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+      </button>
 
       {/* Overlay oscuro cuando el menú está abierto */}
-      {isMenuOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={toggleMenu} />}
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={closeMenu} aria-hidden="true"></div>
+      )}
 
       {/* Menú lateral */}
       <div
-        id="mobile-sidebar"
-        className={cn(
-          "fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-900 shadow-lg z-50 transform transition-transform duration-300 ease-in-out",
-          isMenuOpen ? "translate-x-0" : "-translate-x-full",
-        )}
+        className={`fixed bottom-0 left-0 z-40 w-64 h-screen bg-white dark:bg-gray-900 transform ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        } transition-transform duration-300 ease-in-out md:hidden`}
       >
-        <div className="p-4 border-b border-green-100 dark:border-green-900">
-          <Link href="/" className="flex items-center">
-            <Image
-              src={logoSrc || "/placeholder.svg"}
-              alt="Tree of Pips"
-              width={150}
-              height={60}
-              className="h-10 w-auto"
-            />
-          </Link>
-        </div>
-
-        <div className="py-4">
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href
-            return (
+        <div className="flex flex-col h-full p-4">
+          <div className="flex-1 py-8">
+            <nav className="space-y-6">
               <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center px-4 py-3 mx-2 rounded-lg",
-                  isActive
-                    ? "bg-green-700 text-white"
-                    : "text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-800",
-                )}
+                href={homeRoute}
+                className={`flex items-center space-x-3 px-3 py-2 rounded-lg ${
+                  isActive(homeRoute)
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+                onClick={closeMenu}
               >
-                <Icon className="h-5 w-5 mr-3" />
-                <span>{item.label}</span>
+                <Home className="h-5 w-5" />
+                <span className="font-medium">{isAuthenticated ? "Dashboard" : "Inicio"}</span>
               </Link>
-            )
-          })}
+
+              {isAuthenticated && (
+                <>
+                  <Link
+                    href="/proyectos"
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg ${
+                      isActive("/proyectos")
+                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
+                    onClick={closeMenu}
+                  >
+                    <PieChart className="h-5 w-5" />
+                    <span className="font-medium">Proyectos</span>
+                  </Link>
+
+                  <Link
+                    href="/estadisticas"
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg ${
+                      isActive("/estadisticas")
+                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
+                    onClick={closeMenu}
+                  >
+                    <BarChart2 className="h-5 w-5" />
+                    <span className="font-medium">Estadísticas</span>
+                  </Link>
+
+                  <Link
+                    href="/ranking"
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg ${
+                      isActive("/ranking")
+                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
+                    onClick={closeMenu}
+                  >
+                    <Trophy className="h-5 w-5" />
+                    <span className="font-medium">Ranking</span>
+                  </Link>
+
+                  <Link
+                    href="/perfil"
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg ${
+                      isActive("/perfil")
+                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
+                    onClick={closeMenu}
+                  >
+                    <User className="h-5 w-5" />
+                    <span className="font-medium">Mi Perfil</span>
+                  </Link>
+
+                  <Link
+                    href="/proyectos/crear"
+                    className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
+                    onClick={closeMenu}
+                  >
+                    <Plus className="h-5 w-5" />
+                    <span className="font-medium">Nuevo Proyecto</span>
+                  </Link>
+                </>
+              )}
+
+              {!isAuthenticated && (
+                <>
+                  <Link
+                    href="/login"
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg ${
+                      isActive("/login")
+                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
+                    onClick={closeMenu}
+                  >
+                    <User className="h-5 w-5" />
+                    <span className="font-medium">Iniciar Sesión</span>
+                  </Link>
+
+                  <Link
+                    href="/registro"
+                    className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
+                    onClick={closeMenu}
+                  >
+                    <Plus className="h-5 w-5" />
+                    <span className="font-medium">Registrarse</span>
+                  </Link>
+                </>
+              )}
+            </nav>
+          </div>
         </div>
       </div>
     </>

@@ -16,8 +16,8 @@ export function AnimatedProgressBar({
   className = "h-2",
   showMarkers = true,
 }: AnimatedProgressBarProps) {
-  const [prevValue, setPrevValue] = useState(value)
-  const [isIncreasing, setIsIncreasing] = useState(false)
+  const [prevValue, setPrevValue] = useState<number>(value)
+  const [isIncreasing, setIsIncreasing] = useState<boolean>(false)
 
   useEffect(() => {
     // Detectar si el valor está aumentando
@@ -32,13 +32,17 @@ export function AnimatedProgressBar({
     setPrevValue(value)
   }, [value, prevValue])
 
+  // Asegurar que el valor es un número válido
+  const safeValue = Number.isFinite(value) ? value : 0
+  const safeExpectedProgress = Number.isFinite(expectedProgress) ? expectedProgress : undefined
+
   return (
     <div className={`relative bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden ${className}`}>
       {/* Barra de progreso animada */}
       <motion.div
         className={`absolute h-full ${isIncreasing ? "bg-green-400" : "bg-green-500"} rounded-full`}
         initial={{ width: `${prevValue}%` }}
-        animate={{ width: `${value}%` }}
+        animate={{ width: `${safeValue}%` }}
         transition={{
           type: "spring",
           stiffness: 260,
@@ -80,10 +84,10 @@ export function AnimatedProgressBar({
       )}
 
       {/* Indicador de progreso esperado */}
-      {expectedProgress !== undefined && (
+      {safeExpectedProgress !== undefined && (
         <div
           className="absolute h-full w-0.5 bg-blue-700 dark:bg-blue-500 z-10"
-          style={{ left: `${expectedProgress}%` }}
+          style={{ left: `${safeExpectedProgress}%` }}
         />
       )}
     </div>

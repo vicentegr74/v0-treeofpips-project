@@ -1,8 +1,9 @@
-// lib/firebase.ts
 import { initializeApp, getApps } from "firebase/app"
-import { getAuth } from "firebase/auth"
+import { getAuth, GoogleAuthProvider } from "firebase/auth"
+import { getFirestore, enableIndexedDbPersistence, CACHE_SIZE_UNLIMITED } from "firebase/firestore"
+import { getStorage } from "firebase/storage"
 
-// Configuración de Firebase
+// Tu configuración de Firebase
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -13,20 +14,22 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 }
 
-// Inicializar Firebase solo en el cliente
-let app;
-let auth;
+// Inicializar Firebase solo si no hay instancias
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0]
 
-// Verificar que estamos en el cliente antes de inicializar
-if (typeof window !== 'undefined') {
-  // Inicializar solo si no hay apps ya inicializadas
-  if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-  } else {
-    app = getApps()[0]; // Si ya hay una app inicializada, úsala
-  }
-  auth = getAuth(app);
+// Inicializar servicios
+const auth = getAuth(app)
+const db = getFirestore(app)
+const storage = getStorage(app)
+const googleProvider = new GoogleAuthProvider()
+
+// Habilitar persistencia offline para Firestore
+if (typeof window !== "undefined") {
+  enableIndexedDbPersistence(db, {
+    cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+  }).catch((err) => {
+    console.error("Error enabling offline persistence:", err)
+  })
 }
 
-// Exportar para uso en otros archivos
-export { firebaseConfig, auth }
+export { auth, db, storage, googleProvider }

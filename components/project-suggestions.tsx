@@ -4,21 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertTriangle, CheckCircle, Clock, TrendingUp, TrendingDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+// Modificar la interfaz para hacer las propiedades opcionales
 interface ProjectSuggestionsProps {
-  dailyGoalNeeded: number
-  averageDailyProgress: number
-  daysActive: number
-  daysRemaining: number
-  progressPercentage: number
+  dailyGoalNeeded?: number
+  averageDailyProgress?: number
+  daysActive?: number
+  daysRemaining?: number
+  progressPercentage?: number
   className?: string
 }
 
+// Añadir valores predeterminados en la desestructuración de props
 export function ProjectSuggestions({
-  dailyGoalNeeded,
-  averageDailyProgress,
-  daysActive,
-  daysRemaining,
-  progressPercentage,
+  dailyGoalNeeded = 10,
+  averageDailyProgress = 8,
+  daysActive = 14,
+  daysRemaining = 30,
+  progressPercentage = 35,
   className,
 }: ProjectSuggestionsProps) {
   // Calcular el porcentaje de cumplimiento de la meta diaria

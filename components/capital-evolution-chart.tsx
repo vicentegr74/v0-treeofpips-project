@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area } from "recharts"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, formatNumberValue } from "@/lib/utils"
 import { ArrowUpRight, ArrowDownRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -18,6 +18,10 @@ interface CapitalEvolutionChartProps {
     progressPercentage: number
   }>
   className?: string
+  data?: Array<{
+    name: string
+    capital: number
+  }>
 }
 
 type TimeFilter = "today" | "week" | "month" | "custom"
@@ -27,6 +31,7 @@ export function CapitalEvolutionChart({
   initialCapital,
   progressHistory,
   className = "",
+  data,
 }: CapitalEvolutionChartProps) {
   const [chartData, setChartData] = useState<any[]>([])
   const [profitPercentage, setProfitPercentage] = useState<number>(0)
@@ -38,8 +43,45 @@ export function CapitalEvolutionChart({
   const [customEndDate, setCustomEndDate] = useState<Date | null>(null)
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false)
 
+  // Si se proporciona data directamente, usarla
+  useEffect(() => {
+    if (data && data.length > 0) {
+      setChartData(data)
+
+      // Calcular valores para las estadísticas
+      const firstValue = data[0]?.capital || initialCapital
+      const lastValue = data[data.length - 1]?.capital || initialCapital
+
+      setCurrentEquity(lastValue)
+
+      const profit = lastValue - firstValue
+      const profitPercent = firstValue > 0 ? (profit / firstValue) * 100 : 0
+      setProfitPercentage(profitPercent)
+
+      // Calcular valores mínimos y máximos para el eje Y
+      const values = data.map((item) => item.capital)
+      const min = Math.min(...values)
+      const max = Math.max(...values)
+      const padding = (max - min) * 0.1
+
+      setMinValue(Math.floor((min - padding) / 50) * 50)
+      setMaxValue(Math.ceil((max + padding) / 50) * 50)
+
+      return
+    }
+
+    // Procesar el historial de progreso para incluir el punto inicial
+    const processedHistory = processHistory()
+
+    // Filtrar datos según el filtro de tiempo seleccionado
+    const filteredData = filterDataByTime(processedHistory)
+
+    // Actualizar datos del gráfico
+    updateChartData(filteredData)
+  }, [data, progressHistory, initialCapital, timeFilter, customStartDate, customEndDate])
+
   // Procesar el historial de progreso para incluir el punto inicial
-  const processedHistory = useMemo(() => {
+  const processHistory = () => {
     if (!progressHistory || progressHistory.length === 0) {
       return [
         {
@@ -66,10 +108,10 @@ export function CapitalEvolutionChart({
       },
       ...sortedHistory,
     ]
-  }, [progressHistory, initialCapital])
+  }
 
   // Filtrar datos según el filtro de tiempo seleccionado
-  const filteredData = useMemo(() => {
+  const filterDataByTime = (data: any[]) => {
     const now = new Date()
     let startDate: Date
 
@@ -88,25 +130,25 @@ export function CapitalEvolutionChart({
         break
       case "custom":
         if (customStartDate && customEndDate) {
-          return processedHistory.filter((entry) => {
+          return data.filter((entry) => {
             const entryDate = new Date(entry.date)
             return entryDate >= customStartDate && entryDate <= customEndDate
           })
         }
-        return processedHistory
+        return data
       default:
         startDate = new Date(now)
         startDate.setHours(0, 0, 0, 0)
     }
 
-    return processedHistory.filter((entry) => {
+    return data.filter((entry) => {
       const entryDate = new Date(entry.date)
       return entryDate >= startDate
     })
-  }, [processedHistory, timeFilter, customStartDate, customEndDate])
+  }
 
-  // Actualizar datos del gráfico cuando cambie el filtro
-  useEffect(() => {
+  // Actualizar datos del gráfico
+  const updateChartData = (filteredData: any[]) => {
     if (filteredData.length === 0) {
       // Si no hay datos filtrados, mostrar solo el capital inicial
       const initialData = [
@@ -145,10 +187,10 @@ export function CapitalEvolutionChart({
 
     setMinValue(Math.floor((min - padding) / 50) * 50) // Redondear a la cincuentena inferior
     setMaxValue(Math.ceil((max + padding) / 50) * 50) // Redondear a la cincuentena superior
-  }, [filteredData, initialCapital])
+  }
 
   // Formatear los datos para el gráfico
-  const formatChartData = (data) => {
+  const formatChartData = (data: any[]) => {
     return data.map((entry) => ({
       date: formatDate(entry.date),
       timestamp: new Date(entry.date).getTime(),
@@ -169,7 +211,7 @@ export function CapitalEvolutionChart({
   }
 
   // Formatear tooltip
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
       const isPositive = data.amount >= 0
@@ -215,11 +257,11 @@ export function CapitalEvolutionChart({
               >
                 {profitPercentage >= 0 ? (
                   <>
-                    +{profitPercentage.toFixed(2)}% <ArrowUpRight className="h-3 w-3 ml-1" />
+                    +{formatNumberValue(profitPercentage, 2)}% <ArrowUpRight className="h-3 w-3 ml-1" />
                   </>
                 ) : (
                   <>
-                    {profitPercentage.toFixed(2)}% <ArrowDownRight className="h-3 w-3 ml-1" />
+                    {formatNumberValue(profitPercentage, 2)}% <ArrowDownRight className="h-3 w-3 ml-1" />
                   </>
                 )}
               </span>
@@ -252,7 +294,10 @@ export function CapitalEvolutionChart({
                 tick={{ fontSize: 10, fill: "#888" }}
                 tickLine={false}
                 axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
-                tickFormatter={(value) => value.toString()}
+                tickFormatter={(value) => {
+                  if (typeof value !== "number") return ""
+                  return value.toString()
+                }}
               />
               <Tooltip content={<CustomTooltip />} />
               <Area

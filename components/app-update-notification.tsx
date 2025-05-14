@@ -3,80 +3,75 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { RefreshCw } from "lucide-react"
-import {
-  Toast,
-  ToastAction,
-  ToastClose,
-  ToastDescription,
-  ToastProvider,
-  ToastTitle,
-  ToastViewport,
-} from "@/components/ui/toast"
 
-export function AppUpdateNotification() {
-  const [showUpdateToast, setShowUpdateToast] = useState(false)
+export default function AppUpdateNotification() {
+  const [showUpdateNotification, setShowUpdateNotification] = useState(false)
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null)
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      // Registrar el service worker
-      navigator.serviceWorker.register("/sw.js").then((reg) => {
-        // Verificar actualizaciones cada hora
-        setInterval(
-          () => {
-            reg.update()
-          },
-          60 * 60 * 1000,
-        )
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return
 
-        // Detectar cuando hay una nueva versión disponible
-        reg.addEventListener("updatefound", () => {
-          const newWorker = reg.installing
-          if (newWorker) {
-            newWorker.addEventListener("statechange", () => {
-              if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-                setWaitingWorker(newWorker)
-                setShowUpdateToast(true)
-              }
-            })
-          }
+    // Función para registrar el service worker
+    const registerServiceWorker = async () => {
+      try {
+        const registration = await navigator.serviceWorker.register("/sw.js")
+        console.log("Service Worker registrado con éxito:", registration)
+
+        // Detectar actualizaciones
+        registration.addEventListener("updatefound", () => {
+          const newWorker = registration.installing
+          if (!newWorker) return
+
+          newWorker.addEventListener("statechange", () => {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              // Hay una nueva versión disponible
+              setShowUpdateNotification(true)
+              setWaitingWorker(newWorker)
+            }
+          })
         })
-      })
 
-      // Escuchar mensajes del service worker
-      navigator.serviceWorker.addEventListener("message", (event) => {
-        if (event.data && event.data.type === "UPDATE_AVAILABLE") {
-          setShowUpdateToast(true)
+        // Verificar si hay una actualización al cargar la página
+        if (registration.waiting) {
+          setShowUpdateNotification(true)
+          setWaitingWorker(registration.waiting)
         }
-      })
+      } catch (error) {
+        console.error("Error al registrar el Service Worker:", error)
+      }
+    }
+
+    // Registrar el service worker cuando la página se carga
+    window.addEventListener("load", registerServiceWorker)
+
+    return () => {
+      window.removeEventListener("load", registerServiceWorker)
     }
   }, [])
 
   const handleUpdate = () => {
-    if (waitingWorker) {
-      waitingWorker.postMessage({ type: "SKIP_WAITING" })
-    }
+    if (!waitingWorker) return
+
+    // Enviar mensaje al service worker para activar la nueva versión
+    waitingWorker.postMessage({ type: "SKIP_WAITING" })
+
+    // Recargar la página para usar la nueva versión
     window.location.reload()
   }
 
+  if (!showUpdateNotification) return null
+
   return (
-    <ToastProvider>
-      {showUpdateToast && (
-        <Toast>
-          <div className="grid gap-1">
-            <ToastTitle>Actualización disponible</ToastTitle>
-            <ToastDescription>Hay una nueva versión de la aplicación disponible.</ToastDescription>
-          </div>
-          <ToastAction asChild altText="Actualizar ahora">
-            <Button size="sm" onClick={handleUpdate} className="bg-green-600 hover:bg-green-700">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Actualizar
-            </Button>
-          </ToastAction>
-          <ToastClose />
-        </Toast>
-      )}
-      <ToastViewport />
-    </ToastProvider>
+    <div className="fixed bottom-4 left-4 right-4 bg-green-600 text-white p-4 rounded-lg shadow-lg z-50 flex items-center justify-between">
+      <p className="text-sm">¡Hay una nueva versión disponible!</p>
+      <Button
+        onClick={handleUpdate}
+        variant="outline"
+        className="bg-white text-green-600 hover:bg-green-50 flex items-center gap-2"
+      >
+        <RefreshCw className="h-4 w-4" />
+        <span>Actualizar</span>
+      </Button>
+    </div>
   )
 }

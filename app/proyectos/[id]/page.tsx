@@ -113,17 +113,17 @@ export default function ProjectDetailPage({ params }) {
     try {
       const audio = new Audio("/sounds/growth.mp3")
 
-      // Añadir manejador de error para evitar promesas rechazadas sin manejar
-      audio.addEventListener("error", (e) => {
-        console.log("Error al cargar el audio:", e)
+      // Usar funciones anónimas sin desestructuración para evitar errores
+      audio.addEventListener("error", () => {
+        console.log("Error al cargar el audio")
       })
 
       // Intentar reproducir con manejo de errores
-      audio.play().catch((err) => {
-        console.log("No se pudo reproducir el audio:", err)
+      audio.play().catch(() => {
+        console.log("No se pudo reproducir el audio")
       })
     } catch (error) {
-      console.log("Error al inicializar el audio:", error)
+      console.log("Error al inicializar el audio")
     }
   }
 
@@ -281,8 +281,6 @@ export default function ProjectDetailPage({ params }) {
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: "100%" }}
-                      transition={{ width: 0 }}
-                      animate={{ width: "100%" }}
                       transition={{ duration: 0.8, ease: "easeOut" }}
                     >
                       <Progress value={project.progressPercentage} className="h-2" />
@@ -333,7 +331,11 @@ export default function ProjectDetailPage({ params }) {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                  <AnimatedTree progressPercentage={project.progressPercentage} onGrow={handleTreeGrow} />
+                  {/* Asegurarse de que progressPercentage es un número válido */}
+                  <AnimatedTree
+                    progressPercentage={typeof project.progressPercentage === "number" ? project.progressPercentage : 0}
+                    onGrow={handleTreeGrow}
+                  />
                 </motion.div>
               </div>
             </TabsContent>

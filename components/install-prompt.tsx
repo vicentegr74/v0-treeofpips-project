@@ -1,88 +1,111 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Download, X } from "lucide-react"
 
 export function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false)
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
-    // Detectar si la app puede ser instalada
-    window.addEventListener("beforeinstallprompt", (e) => {
-      // Prevenir que Chrome muestre la instalación automáticamente
+    // Verificar si el usuario ya ha instalado la app o ha descartado el prompt
+    const hasInstalled = localStorage.getItem("appInstalled") === "true"
+    const hasDismissed = localStorage.getItem("installPromptDismissed") === "true"
+
+    if (hasInstalled || hasDismissed) {
+      setShowPrompt(false)
+      return
+    }
+
+    // Escuchar el evento beforeinstallprompt
+    const handleBeforeInstallPrompt = (e: Event) => {
+      // Prevenir que Chrome muestre el prompt automáticamente
       e.preventDefault()
-      // Guardar el evento para usarlo después
+      // Guardar el evento para usarlo más tarde
       setDeferredPrompt(e)
-      // Mostrar nuestro propio prompt
+      // Mostrar nuestro prompt personalizado
       setShowPrompt(true)
-    })
+    }
 
-    // Detectar si la app ya está instalada
-    window.addEventListener("appinstalled", () => {
-      // Limpiar el prompt
-      setShowPrompt(false)
-      setDeferredPrompt(null)
-      // Registrar que la app fue instalada
-      console.log("App instalada")
-    })
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
 
-    // Verificar si ya está en modo standalone (ya instalada)
+    // Verificar si la app ya está instalada
     if (window.matchMedia("(display-mode: standalone)").matches) {
+      localStorage.setItem("appInstalled", "true")
       setShowPrompt(false)
+    }
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
     }
   }, [])
 
-  const handleInstallClick = async () => {
+  const handleInstall = async () => {
     if (!deferredPrompt) return
 
     // Mostrar el prompt de instalación
     deferredPrompt.prompt()
 
-    // Esperar a que el usuario responda
-    const { outcome } = await deferredPrompt.userChoice
+    // Esperar a que el usuario responda al prompt
+    const choiceResult = await deferredPrompt.userChoice
 
-    // Limpiar el prompt
+    // Resetear el deferredPrompt después de usarlo
     setDeferredPrompt(null)
-    setShowPrompt(false)
 
-    console.log(`Usuario eligió: ${outcome}`)
+    if (choiceResult.outcome === "accepted") {
+      console.log("Usuario aceptó la instalación")
+      localStorage.setItem("appInstalled", "true")
+    } else {
+      console.log("Usuario rechazó la instalación")
+    }
+
+    // Ocultar nuestro prompt personalizado
+    setShowPrompt(false)
+  }
+
+  const handleDismiss = () => {
+    setShowPrompt(false)
+    setDismissed(true)
+    localStorage.setItem("installPromptDismissed", "true")
   }
 
   if (!showPrompt) return null
 
   return (
-    <Dialog open={showPrompt} onOpenChange={setShowPrompt}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Instalar la aplicación</DialogTitle>
-          <DialogDescription>
-            Instala "El Árbol de los Logros del Trading" en tu dispositivo para acceder más rápido y usarla sin
-            conexión.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex justify-center py-4">
-          <img src="/placeholder.svg?height=120&width=120" alt="Logo de la aplicación" className="h-30 w-30" />
+    <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-900/30">
+      <CardContent className="p-4 flex items-center justify-between">
+        <div className="flex items-center">
+          <Download className="h-5 w-5 text-green-600 dark:text-green-400 mr-3" />
+          <div>
+            <p className="text-green-800 dark:text-green-300 font-medium">Instala Tree of Pips</p>
+            <p className="text-sm text-green-700 dark:text-green-400">
+              Accede rápidamente y úsalo sin conexión como una app
+            </p>
+          </div>
         </div>
-        <DialogFooter className="flex flex-col sm:flex-row sm:justify-between">
-          <Button variant="outline" onClick={() => setShowPrompt(false)}>
-            Ahora no
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDismiss}
+            className="border-green-200 dark:border-green-800 text-green-700 dark:text-green-400"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only md:not-sr-only md:ml-2">No, gracias</span>
           </Button>
-          <Button onClick={handleInstallClick} className="bg-green-600 hover:bg-green-700 mt-2 sm:mt-0">
-            <Download className="mr-2 h-4 w-4" />
-            Instalar aplicación
+          <Button
+            size="sm"
+            onClick={handleInstall}
+            className="bg-green-700 hover:bg-green-800 text-white flex items-center gap-1"
+          >
+            <Download className="h-4 w-4" />
+            <span>Instalar</span>
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

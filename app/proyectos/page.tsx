@@ -85,8 +85,9 @@ export default function ProjectsPage() {
     }
   }
 
+  // Corregir la función handleNewProject para que redirija a la ruta correcta
   const handleNewProject = () => {
-    router.push("/proyectos/crear")
+    router.push("/proyectos/nuevo")
   }
 
   const formatDate = (dateString: string) => {

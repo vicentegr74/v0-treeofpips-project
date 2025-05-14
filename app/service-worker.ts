@@ -3,7 +3,8 @@
 // Este archivo debe ser colocado en la carpeta 'public' como 'sw.js'
 // Aquí solo mostramos el contenido que debería tener
 
-const SW = self as unknown as ServiceWorkerGlobalScope
+// Definir el tipo para el Service Worker
+declare const self: ServiceWorkerGlobalScope
 
 // Nombre de la caché
 const CACHE_NAME = "trading-achievements-v1"
@@ -20,10 +21,10 @@ const urlsToCache = [
 ]
 
 // Almacenamiento para notificaciones programadas
-const scheduledNotifications = new Map()
+const scheduledNotifications = new Map<string, number>()
 
 // Instalar el Service Worker
-SW.addEventListener("install", (event) => {
+self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log("Caché abierta")
@@ -33,7 +34,7 @@ SW.addEventListener("install", (event) => {
 })
 
 // Activar el Service Worker
-SW.addEventListener("activate", (event) => {
+self.addEventListener("activate", (event) => {
   const cacheWhitelist = [CACHE_NAME]
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -42,6 +43,7 @@ SW.addEventListener("activate", (event) => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
             return caches.delete(cacheName)
           }
+          return Promise.resolve()
         }),
       )
     }),
@@ -49,7 +51,7 @@ SW.addEventListener("activate", (event) => {
 })
 
 // Estrategia de caché: Network first, fallback to cache
-SW.addEventListener("fetch", (event) => {
+self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
@@ -64,13 +66,13 @@ SW.addEventListener("fetch", (event) => {
       })
       .catch(() => {
         // Si falla la red, intentar desde caché
-        return caches.match(event.request)
+        return caches.match(event.request) as Promise<Response>
       }),
   )
 })
 
 // Sincronización en segundo plano
-SW.addEventListener("sync", (event) => {
+self.addEventListener("sync", (event) => {
   if (event.tag === "sync-projects") {
     event.waitUntil(syncProjects())
   }
@@ -79,12 +81,13 @@ SW.addEventListener("sync", (event) => {
 async function syncProjects() {
   // Aquí iría la lógica para sincronizar con un backend
   console.log("Sincronizando proyectos en segundo plano")
+  return Promise.resolve()
 }
 
 // Gestión de mensajes
-SW.addEventListener("message", (event) => {
+self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
-    SW.skipWaiting()
+    self.skipWaiting()
   }
 
   // Programar notificación
@@ -101,7 +104,7 @@ SW.addEventListener("message", (event) => {
 })
 
 // Función para programar notificaciones
-function scheduleNotification(id, hour, minute, title, body) {
+function scheduleNotification(id: string, hour: number, minute: number, title: string, body: string) {
   // Cancelar notificación existente con el mismo ID
   cancelNotification(id)
 
@@ -109,7 +112,7 @@ function scheduleNotification(id, hour, minute, title, body) {
   const checkAndNotify = () => {
     const now = new Date()
     if (now.getHours() === hour && now.getMinutes() === minute) {
-      SW.registration.showNotification(title, {
+      self.registration.showNotification(title, {
         body,
         icon: "/icons/icon-192x192.png",
         badge: "/icons/icon-192x192.png",
@@ -131,7 +134,7 @@ function scheduleNotification(id, hour, minute, title, body) {
 }
 
 // Función para cancelar notificaciones
-function cancelNotification(id) {
+function cancelNotification(id: string) {
   const intervalId = scheduledNotifications.get(id)
   if (intervalId) {
     clearInterval(intervalId)
@@ -140,23 +143,26 @@ function cancelNotification(id) {
 }
 
 // Gestionar clics en notificaciones
-SW.addEventListener("notificationclick", (event) => {
+self.addEventListener("notificationclick", (event) => {
   event.notification.close()
 
   if (event.action === "open" || !event.action) {
     event.waitUntil(
-      SW.clients.matchAll({ type: "window" }).then((clientList) => {
+      self.clients.matchAll({ type: "window" }).then((clientList) => {
         // Si ya hay una ventana abierta, enfocarla
         for (const client of clientList) {
-          if (client.url.includes(SW.registration.scope) && "focus" in client) {
+          if (client.url.includes(self.registration.scope) && "focus" in client) {
             return client.focus()
           }
         }
         // Si no hay ventana abierta, abrir una nueva
-        if (SW.clients.openWindow) {
-          return SW.clients.openWindow("/")
+        if (self.clients.openWindow) {
+          return self.clients.openWindow("/")
         }
+        return Promise.resolve()
       }),
     )
   }
 })
+
+export {}

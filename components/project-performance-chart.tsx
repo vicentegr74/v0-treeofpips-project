@@ -97,39 +97,45 @@ export function ProjectPerformanceChart({
             />
             <Tooltip />
             <Legend />
-            {metric === "balance" ? (
-              <>
-                {selectedProjects.map((projectId, index) => (
-                  <Line
-                    key={projectId}
-                    type="monotone"
-                    dataKey={`balance_${projectId}`}
-                    name={availableProjects.find((p) => p.id === projectId)?.title || projectId}
-                    stroke={colors[index % colors.length]}
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                  />
-                ))}
-                <ReferenceLine y={0} stroke="#666" />
-              </>
-            ) : (
-              <>
-                {selectedProjects.map((projectId, index) => (
-                  <Line
-                    key={projectId}
-                    type="monotone"
-                    dataKey={`roi_${projectId}`}
-                    name={availableProjects.find((p) => p.id === projectId)?.title || projectId}
-                    stroke={colors[index % colors.length]}
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                  />
-                ))}
-                <ReferenceLine y={0} stroke="#666" />
-              </>
-            )}
+            {(() => {
+              if (metric === "balance") {
+                return (
+                  <>
+                    {selectedProjects.map((projectId, index) => (
+                      <Line
+                        key={projectId}
+                        type="monotone"
+                        dataKey={`balance_${projectId}`}
+                        name={availableProjects.find((p) => p.id === projectId)?.title || projectId}
+                        stroke={colors[index % colors.length]}
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                        activeDot={{ r: 5 }}
+                      />
+                    ))}
+                    <ReferenceLine y={0} stroke="#666" />
+                  </>
+                )
+              } else {
+                return (
+                  <>
+                    {selectedProjects.map((projectId, index) => (
+                      <Line
+                        key={projectId}
+                        type="monotone"
+                        dataKey={`roi_${projectId}`}
+                        name={availableProjects.find((p) => p.id === projectId)?.title || projectId}
+                        stroke={colors[index % colors.length]}
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                        activeDot={{ r: 5 }}
+                      />
+                    ))}
+                    <ReferenceLine y={0} stroke="#666" />
+                  </>
+                )
+              }
+            })()}
             <Brush dataKey="date" height={30} stroke="#8884d8" />
           </LineChart>
         </ResponsiveContainer>

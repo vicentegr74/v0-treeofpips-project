@@ -8,18 +8,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { Eye, EyeOff, AlertCircle } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
 import { useTheme } from "next-themes"
+import { useSearchParams } from "next/navigation"
 
 export default function LoginPage() {
   const { login, loginWithGoogle } = useAuth()
-  const [email, setEmail] = useState("")
+  const searchParams = useSearchParams()
+  const emailParam = searchParams.get("email")
+
+  const [email, setEmail] = useState(emailParam || "")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [showRegisterLink, setShowRegisterLink] = useState(false)
   const { theme } = useTheme()
 
   // Asegurarse de que el componente está montado antes de acceder al tema
@@ -27,7 +32,14 @@ export default function LoginPage() {
     setMounted(true)
   }, [])
 
-  // Seleccionar el logo adecuado según el tema (corregido)
+  // Actualizar el email si cambia en los parámetros de URL
+  useEffect(() => {
+    if (emailParam) {
+      setEmail(emailParam)
+    }
+  }, [emailParam])
+
+  // Seleccionar el logo adecuado según el tema
   const logoSrc = mounted
     ? theme === "dark"
       ? "/images/treeofpips-horizontal-oscuro.png"
@@ -37,6 +49,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setShowRegisterLink(false)
 
     try {
       setLoading(true)
@@ -44,6 +57,11 @@ export default function LoginPage() {
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message)
+
+        // Si el error indica que el usuario no existe
+        if (error.message.includes("No existe una cuenta")) {
+          setShowRegisterLink(true)
+        }
       } else {
         setError("Error al iniciar sesión")
       }
@@ -79,16 +97,16 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-green-800 dark:text-green-400">El árbol de los Logros del Trading</h1>
 
           <div className="space-y-4 text-left">
-            <h2 className="text-xl font-semibold text-green-700 dark:text-green-300">Bienvenido de nuevo</h2>
+            <h2 className="text-xl font-semibold text-green-700 dark:text-green-300">Cultiva tu éxito financiero</h2>
 
             <p className="text-gray-700 dark:text-gray-300">
-              Continúa cultivando tu éxito financiero. Tu árbol de logros te espera para seguir creciendo con cada
-              operación exitosa.
+              Así como un árbol crece con cuidado y paciencia, tu cuenta de trading florecerá con cada operación
+              exitosa. Visualiza tu progreso, celebra tus logros y observa cómo tus metas financieras se hacen realidad.
             </p>
 
             <p className="text-gray-700 dark:text-gray-300">
-              Inicia sesión para visualizar tu progreso, celebrar tus logros y seguir transformando tus metas
-              financieras en realidad.
+              Con Tree of Pips, cada paso en tu camino queda registrado en el árbol de tus logros, transformando números
+              en una experiencia visual motivadora.
             </p>
           </div>
         </div>
@@ -99,12 +117,27 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="bg-white dark:bg-gray-900 p-8 rounded-lg shadow-md border border-green-100 dark:border-green-900">
             <h2 className="text-2xl font-bold mb-6 text-green-700 dark:text-green-400">Iniciar sesión</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">Accede a tu cuenta para continuar</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">Continúa tu viaje hacia el éxito financiero</p>
 
             {error && (
-              <div className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-3 rounded-md mb-4 flex items-start gap-2">
-                <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                <span>{error}</span>
+              <div className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-3 rounded-md mb-4">
+                {error}
+                {showRegisterLink && (
+                  <div className="mt-2">
+                    <Link
+                      href={`/registro?email=${encodeURIComponent(email)}`}
+                      className="text-green-700 dark:text-green-400 font-medium hover:underline"
+                    >
+                      Ir a crear cuenta
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {emailParam && (
+              <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 p-3 rounded-md mb-4">
+                Este email ya está registrado. Por favor, inicia sesión.
               </div>
             )}
 
@@ -123,7 +156,15 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <Link
+                    href="/recuperar-password"
+                    className="text-sm text-green-700 dark:text-green-400 hover:underline"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
                 <div className="relative">
                   <Input
                     id="password"

@@ -1,37 +1,28 @@
-export const dynamic = "force-static";
-
 import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Tree of Pips - El árbol de los Logros del Trading",
+    name: "Tree of Pips - Árbol de Logros del Trading",
     short_name: "Tree of Pips",
-    description: "Visualiza y gestiona tus metas financieras en el mundo del trading",
+    description: "Visualiza y celebra tus logros en trading con un árbol que crece con tu éxito",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#166534",
+    theme_color: "#10b981",
     icons: [
       {
-        src: "/icons/icon-192x192.png",
+        src: "/images/treeofpips-logo-cuadrado-claro.png",
         sizes: "192x192",
         type: "image/png",
       },
       {
-        src: "/icons/icon-256x256.png",
-        sizes: "256x256",
-        type: "image/png",
-      },
-      {
-        src: "/icons/icon-384x384.png",
-        sizes: "384x384",
-        type: "image/png",
-      },
-      {
-        src: "/icons/icon-512x512.png",
+        src: "/images/treeofpips-logo-cuadrado-claro.png",
         sizes: "512x512",
         type: "image/png",
       },
     ],
   }
 }
+
+// Añadir esta línea para forzar la generación estática
+export const dynamic = "force-static"
