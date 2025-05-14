@@ -20,14 +20,13 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   
-  // Deshabilitar la generación estática para ciertas páginas
-  unstable_excludeFiles: ['**/not-found.tsx', '**/not-found.js', '**/not-found.jsx'],
+  // Estas opciones deben estar fuera de experimental
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
   
   // Configuración experimental para manejar errores
   experimental: {
-    // Estas opciones pueden ayudar con problemas de renderizado
-    skipTrailingSlashRedirect: true,
-    skipMiddlewareUrlNormalize: true,
+    // Otras opciones experimentales pueden ir aquí
   }
 }
 
