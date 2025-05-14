@@ -1,30 +1,27 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Configuración básica
   output: 'standalone',
-  reactStrictMode: true,
-  swcMinify: true,
+  poweredByHeader: false,
+  compress: true,
+  
+  // Configuración de imágenes
   images: {
     domains: ['firebasestorage.googleapis.com'],
+    formats: ['image/avif', 'image/webp'],
     unoptimized: true,
   },
-  experimental: {
-    serverActions: true,
-  },
-  // Deshabilitar la generación estática para rutas dinámicas
-  staticPageGenerationTimeout: 120,
-  // Configurar rutas que no deben generarse estáticamente
-  exportPathMap: async function() {
-    return {
-      '/': { page: '/' },
-      '/404': { page: '/404' },
-    };
-  },
+  
+  // Ignorar errores durante la construcción
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: true,
   },
+  
+  // Configuración para el tiempo de generación de páginas estáticas
+  staticPageGenerationTimeout: 120,
 }
 
 export default nextConfig
